@@ -19,7 +19,7 @@ void launch_minimat(){
     char input[50];
     do {
         // tokenize input
-        printf("minimat> ");
+        printf("evil minimat> ");
         fgets(input, 50, stdin);
         input[strcspn(input,"\n")] = '\0';
         consume_input(input);
@@ -87,7 +87,7 @@ void consume_input(char* input){
                 return;
 
             fill_string_from_name(vector, tokens[0]);
-            printf("%s\n", vector);        
+            printf("I did the calculation, buuut I'm not gonna tell you the result (because I'm evil)\n");        
         } else {
             double magnitudes[3];
             int error = 0;
@@ -114,7 +114,7 @@ void consume_input(char* input){
             return;
 
         fill_string_with_tmp(vector);
-        printf("%s\n", vector);  
+        printf("I did the calculation, buuut I'm not gonna tell you the result (because I'm evil)\n");  
     } else {
         printf("Illegal token: 2nd position must be an operator (=, +, -, *) (found \'%s\')\n", tokens[1]);
     }
