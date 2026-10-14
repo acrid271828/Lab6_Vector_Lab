@@ -7,9 +7,6 @@
 *
 * This file never exposes the Vect struct externaly: callers exclusively use names and doubles
 *
-* Uses a vector name == NULL to denote that a vector is unset/the array location is empty
-* , so NULL can never be set as a valid vector's name
-*
 * to compile: $ make
 **************/
 #include <string.h>
@@ -18,12 +15,15 @@
 #include "vector.h"
 #include "vector_storage.h"
 
-static Vect vectors[VECTOR_ARRAY_LENGTH] = {0};
+static int vectors_size = 0;
+static int vectors_length = 0;
+static Vect* vectors;
 static Vect tmp_vector = {
     .x = 0,
     .y = 0,
     .z = 0
 };
+
 
 /**
  * Private method for getting a vector from the array
@@ -33,7 +33,7 @@ static Vect tmp_vector = {
  * If the named vector does not exist: a new vector with name = NULL
  */
 static Vect get(char* name){
-    for(size_t i = 0; i < VECTOR_ARRAY_LENGTH && vectors[i].name != NULL; i++){
+    for(size_t i = 0; i < vectors_size; i++){
         if (!strcmp(name, vectors[i].name)){
             return vectors[i];
         }
@@ -41,18 +41,47 @@ static Vect get(char* name){
     return null_vector();
 }
 
-int fill_string_with_tmp(char* output){
-    if (tmp_vector.name == NULL){
-        return ERR_TMP_VECTOR_NOT_SET;
+/**
+ * Private method for realloc'ing the vectors array
+ * @return if succesfull: 0
+ * 
+ * if unsuccessful: ERR_ALLOCATION
+ */
+static int reallocate(){
+    Vect* old_ptr = vectors;
+    vectors = realloc(vectors, vectors_length * sizeof(Vect) * 2);
+    if (vectors == NULL){
+        vectors = old_ptr;
+        return ERR_ALLOCATION;
     }
+    vectors_length *= 2;
+    return 0;
+}
+
+int init_storage(){
+    if (vectors != NULL){
+        return 1;
+    }
+    vectors = malloc(VECTOR_ARRAY_INITIAL_LENGTH * sizeof(Vect));
+    if (vectors == NULL){
+        return ERR_ALLOCATION;
+    }
+    vectors_length = VECTOR_ARRAY_INITIAL_LENGTH;
+    return 0;
+}
+
+int fill_string_with_tmp(char* output){
+    if (vectors == NULL) return ERR_ARRAY_UNINITIALIZED;
+    if (tmp_vector.name == NULL) return ERR_TMP_VECTOR_NOT_SET;
+    
     sprintf(output, "%s = %.02f, %.02f, %.02f", tmp_vector.name, tmp_vector.x, tmp_vector.y, tmp_vector.z);
     return 0;
 }
 
 int fill_string_from_name(char* output, char* name){
-    if (name == NULL){
-        return ERR_NAME_NULL;
-    }
+    if (vectors == NULL) return ERR_ARRAY_UNINITIALIZED;
+    if (name == NULL) return ERR_NAME_NULL;
+    
     Vect v = get(name);
     if (v.name == NULL){
         return ERR_VECTOR_MISSING;
@@ -61,24 +90,20 @@ int fill_string_from_name(char* output, char* name){
     return 0;
 }
 
-int fill_string_from_index(char* output, int index){
-    if (index < 0 || index > VECTOR_ARRAY_LENGTH){
-        return ERR_INDEX_OUT_OF_BOUNDS;
-    }
-    if (vectors[index].name == NULL){
-        strcpy(output, "<empty>");
-    } else {
-        sprintf(output, "%s = %.02f, %.02f, %.02f", vectors[index].name, vectors[index].x, vectors[index].y, vectors[index].z);
+int print_all(){
+    if (vectors == NULL) return ERR_ARRAY_UNINITIALIZED;
+
+    for(size_t i = 0; i < vectors_size; i++){
+        printf("%s = %.02f, %.02f, %.02f\n", vectors[i].name, vectors[i].x, vectors[i].y, vectors[i].z);
     }
     return 0;
-    
 }
 
 int get_idx(char* name){
-    if (name == NULL){
-        return ERR_NAME_NULL;
-    }
-    for(size_t i = 0; i < VECTOR_ARRAY_LENGTH; i++){
+    if (vectors == NULL) return ERR_ARRAY_UNINITIALIZED;
+    if (name == NULL) return ERR_NAME_NULL;
+
+    for(size_t i = 0; i < vectors_size; i++){
         if (!strcmp(name, vectors[i].name)){
             return i;
         }
@@ -87,32 +112,59 @@ int get_idx(char* name){
 }
 
 int assign(char* name, double x, double y, double z){
-    if (name == NULL){
-        return ERR_NAME_NULL;
-    }
-    for(size_t i = 0; i < VECTOR_ARRAY_LENGTH; i++){
-        if (vectors[i].name == NULL){
-            vectors[i].name = malloc(strlen(name));
-            strcpy(vectors[i].name, name);
-        }
-        if (vectors[i].name == NULL || !strcmp(vectors[i].name, name)){
+    if (vectors == NULL) return ERR_ARRAY_UNINITIALIZED;
+    if (name == NULL) return ERR_NAME_NULL;
+    
+    // reassign if exists
+    for(size_t i = 0; i < vectors_size; i++){
+        if (!strcmp(vectors[i].name, name)){
             vectors[i].x = x;
             vectors[i].y = y;
             vectors[i].z = z;
             return 0;
         }
     }
-    return ERR_STORAGE_FULL;
+
+    // add if not exists
+    if (vectors_size >= vectors_length){
+        if (reallocate()){
+            return ERR_ALLOCATION;
+        }
+    }
+
+    Vect vector = {
+        .name = malloc(strlen(name) + 1),
+        .x = x,
+        .y = y,
+        .z = z
+    };
+    if (vector.name == NULL){
+        return ERR_ALLOCATION;
+    }
+    strcpy(vector.name, name);
+    vectors[vectors_size++] = vector;
+    return 0;
 }
 
-void clear(){
-    for(size_t i = 0; i < VECTOR_ARRAY_LENGTH; i++){
+int clear(){
+    if (vectors == NULL) return ERR_ARRAY_UNINITIALIZED;
+
+    for(size_t i = 0; i < vectors_size; i++){
         free(vectors[i].name);
-        vectors[i].name = NULL;
     }
+    free(vectors);
+    vectors = NULL;
+    if (tmp_vector.name != NULL){
+        free(tmp_vector.name);
+        tmp_vector = null_vector();
+    }
+    vectors_size = 0;
+    return 0;
 }
 
 int copy_tmp(char* name){
+    if (vectors == NULL) return ERR_ARRAY_UNINITIALIZED;
+
     Vect v = get(name);
     if (v.name == NULL){
         return ERR_VECTOR_MISSING;
@@ -123,6 +175,8 @@ int copy_tmp(char* name){
 }
 
 int add_tmp(char* name1, char* name2){
+    if (vectors == NULL) return ERR_ARRAY_UNINITIALIZED;
+
     Vect v1 = get(name1);
     Vect v2 = get(name2);
     if (v1.name == NULL || v2.name == NULL){
@@ -134,6 +188,8 @@ int add_tmp(char* name1, char* name2){
 }
 
 int subtract_tmp(char* name1, char* name2){
+    if (vectors == NULL) return ERR_ARRAY_UNINITIALIZED;
+
     Vect v1 = get(name1);
     Vect v2 = get(name2);
     if (v1.name == NULL || v2.name == NULL){
@@ -145,6 +201,8 @@ int subtract_tmp(char* name1, char* name2){
 }
 
 int scale_tmp(char* name, double scalar){
+    if (vectors == NULL) return ERR_ARRAY_UNINITIALIZED;
+
     Vect v = get(name);
     if (v.name == NULL){
         return ERR_VECTOR_MISSING;
@@ -155,23 +213,15 @@ int scale_tmp(char* name, double scalar){
 }
 
 int assign_tmp(char* name){
-    if (tmp_vector.name == NULL){
-        return ERR_TMP_VECTOR_NOT_SET;
+    if (vectors == NULL) return ERR_ARRAY_UNINITIALIZED;
+    if (tmp_vector.name == NULL) return ERR_TMP_VECTOR_NOT_SET;
+    if (name == NULL) return ERR_NAME_NULL;
+
+    int code = assign(name, tmp_vector.x, tmp_vector.y, tmp_vector.z);
+    if (!code){
+        free(tmp_vector.name);
+        tmp_vector = null_vector();
     }
-    if (name == NULL){
-        return ERR_NAME_NULL;
-    }
-    for(size_t i = 0; i < VECTOR_ARRAY_LENGTH; i++){
-        // if name does not exist, overwrite first null element (add to array)
-        // if name does exists, overwrite that field
-        if (vectors[i].name == NULL || !strcmp(name, vectors[i].name)){
-            vectors[i] = tmp_vector;
-            vectors[i].name = malloc(strlen(name));
-            strcpy(vectors[i].name, name);
-            free(tmp_vector.name);
-            tmp_vector = null_vector();
-            return 0;
-        }
-    }
-    return ERR_STORAGE_FULL;
+
+    return code;
 }

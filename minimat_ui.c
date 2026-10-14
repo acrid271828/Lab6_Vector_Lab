@@ -16,10 +16,11 @@ static char vector[100];
 static char* tokens[MAX_TOKENS];
 
 void launch_minimat(){
+    init_storage();
     char input[50];
     do {
         // tokenize input
-        printf("evil minimat> ");
+        printf("minimat> ");
         fgets(input, 50, stdin);
         input[strcspn(input,"\n")] = '\0';
         consume_input(input);
@@ -48,18 +49,18 @@ void consume_input(char* input){
         return;
 
     // commands
-    if (!strcmp(tokens[0], "quit")) 
+    if (!strcmp(tokens[0], "quit")){
+        clear();
         return;
+    } 
     if (!strcmp(tokens[0], "clear")) {
         clear();
         printf("Array clear!\n");
+        handle(init_storage());
         return;
     }
     if (!strcmp(tokens[0], "list")) {
-        for (int i = 0; i < VECTOR_ARRAY_LENGTH; i++){
-            fill_string_from_index(vector, i);
-            printf("%d: %s\n", i, vector);
-        }
+        print_all();
         return;
     }
 
@@ -87,7 +88,7 @@ void consume_input(char* input){
                 return;
 
             fill_string_from_name(vector, tokens[0]);
-            printf("I did the calculation, buuut I'm not gonna tell you the result (because I'm evil)\n");        
+            printf("%s\n", vector);
         } else {
             double magnitudes[3];
             int error = 0;
@@ -114,7 +115,7 @@ void consume_input(char* input){
             return;
 
         fill_string_with_tmp(vector);
-        printf("I did the calculation, buuut I'm not gonna tell you the result (because I'm evil)\n");  
+        printf("%s\n", vector);
     } else {
         printf("Illegal token: 2nd position must be an operator (=, +, -, *) (found \'%s\')\n", tokens[1]);
     }
@@ -214,13 +215,23 @@ int handle(int status_code){
         case ERR_VECTOR_MISSING:
             printf("A vector with that name does not exists (check with 'list')\n");
             break;
+        case ERR_ALLOCATION:
+            printf("Memory allocation error. Please try again\n");
+            break;
+        case ERR_ARRAY_UNINITIALIZED:
+            printf("Memory state error. Attempting a fix...\n");
+            if (init_storage() >= 0){
+                printf("Success! Please retry your latest operation\n");
+            } else {
+                printf("Memory allocation error. Please try again\n");
+            }
+            break;
         case ERR_TMP_VECTOR_NOT_SET:
-        case ERR_INDEX_OUT_OF_BOUNDS:
             printf("Internal error: code %d\n", status_code);
             break;
         default:
             printf("Unknown error: code %d\n", status_code);
             break;
     }
-    return -1;
+    return status_code;
 }

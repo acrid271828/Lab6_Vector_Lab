@@ -14,12 +14,24 @@
 **************/
 #ifndef VECTOR_STORAGE_H
 #define VECTOR_STORAGE_H
-#define VECTOR_ARRAY_LENGTH 10
+#define VECTOR_ARRAY_INITIAL_LENGTH 10
 #define ERR_VECTOR_MISSING -1
 #define ERR_NAME_NULL -2
 #define ERR_STORAGE_FULL -3
-#define ERR_INDEX_OUT_OF_BOUNDS -4
-#define ERR_TMP_VECTOR_NOT_SET -5
+#define ERR_TMP_VECTOR_NOT_SET -4
+#define ERR_ALLOCATION -5
+#define ERR_ARRAY_UNINITIALIZED -6
+
+/**
+ * Initializes the storage array. This MUST be called before any other function
+ * 
+ * @return if successful: 0
+ * 
+ * if array already exists (good): 1
+ * 
+ * if fails: ERR_ALLOCATION
+ */
+int init_storage();
 
 /**
  * Formats a string representation of only vector magnitudes, "x, y, z"
@@ -27,6 +39,8 @@
  * @return if the vector exists: 0
  * 
  * if the temp vector was not set: ERR_TMP_VECTOR_NOT_SET
+ * 
+ * if init_storage() was not completed succesfully: ERR_ARRAY_UNINITIALIZED
  */
 int fill_string_with_tmp(char* output);
 
@@ -39,18 +53,19 @@ int fill_string_with_tmp(char* output);
  * if the vector does not exist: ERR_VECTOR_MISSING
  * 
  * if the input name is NULL: ERR_NAME_NULL
+ * 
+ * if init_storage() was not completed succesfully: ERR_ARRAY_UNINITIALIZED
  */
 int fill_string_from_name(char* output, char* name);
 
 /**
- * Formats a string representation of a vector, "name = x, y, z" or "<empty>"
- * @param output the string to store the output in
- * @param index the array index to pull from
- * @return if the index is in bounds: 0
+ * Prints all vectors in storage
  * 
- * if the input index is out of bounds: ERR_INDEX_OUT_OF_BOUNDS
+ * @return if successful: 0
+ * 
+ * if init_storage() was not completed succesfully: ERR_ARRAY_UNINITIALIZED
  */
-int fill_string_from_index(char* output, int index);
+int print_all();
 
 /**
  * Gets the index of a vector in the storage array
@@ -60,6 +75,8 @@ int fill_string_from_index(char* output, int index);
  * if the vector does not exists: ERR_VECTOR_MISSING
  * 
  * if the input name is NULL: ERR_NAME_NULL
+ * 
+ * if init_storage() was not completed succesfully: ERR_ARRAY_UNINITIALIZED
  */
 int get_idx(char* name);
 
@@ -74,13 +91,18 @@ int get_idx(char* name);
  * if the array is full: ERR_STORAGE_FULL
  * 
  * if the input name is NULL: ERR_NAME_NULL
+ * 
+ * if init_storage() was not completed succesfully: ERR_ARRAY_UNINITIALIZED
  */
 int assign(char* name, double x, double y, double z);
 
 /**
- * Clears the entire vector array
+ * Clears the entire vector array memory. After this, init_storage() must be used to continue using the storage array
+ * @return if successful: 0
+ * 
+ * if init_storage() was not completed succesfully: ERR_ARRAY_UNINITIALIZED
  */
-void clear();
+int clear();
 
 /**
  * Creates a copy of a stored vector and stores the copy as the temp vector
@@ -88,6 +110,8 @@ void clear();
  * @return if successful: 0
  * 
  * if the named vector does not exists: ERR_VECTOR_MISSING
+ * 
+ * if init_storage() was not completed succesfully: ERR_ARRAY_UNINITIALIZED
  */
 int copy_tmp(char* name);
 
@@ -98,6 +122,8 @@ int copy_tmp(char* name);
  * @return if successful: 0
  * 
  * if either named vector does not exists: ERR_VECTOR_MISSING
+ * 
+ * if init_storage() was not completed succesfully: ERR_ARRAY_UNINITIALIZED
  */
 int add_tmp(char* name1, char* name2);
 
@@ -108,6 +134,8 @@ int add_tmp(char* name1, char* name2);
  * @return if successful: 0
  * 
  * if either named vector does not exists: ERR_VECTOR_MISSING
+ * 
+ * if init_storage() was not completed succesfully: ERR_ARRAY_UNINITIALIZED
  */
 int subtract_tmp(char* name1, char* name2);
 
@@ -118,6 +146,8 @@ int subtract_tmp(char* name1, char* name2);
  * @return if successful: 0
  * 
  * if the named vector does not exists: ERR_VECTOR_MISSING
+ * 
+ * if init_storage() was not completed succesfully: ERR_ARRAY_UNINITIALIZED
  */
 int scale_tmp(char* name, double scalar);
 
@@ -131,6 +161,8 @@ int scale_tmp(char* name, double scalar);
  * if the array is full: ERR_STORAGE_FULL
  * 
  * if the temp vector doesn't have a value: ERR_TMP_VECTOR_NOT_SET
+ * 
+ * if init_storage() was not completed succesfully: ERR_ARRAY_UNINITIALIZED
  */
 int assign_tmp(char* name);
 
