@@ -2,5 +2,7 @@
 *.d
 # object files
 *.o
+# data files
+*.csv
 # exe
 minimat

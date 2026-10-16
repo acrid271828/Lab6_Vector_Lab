@@ -8,10 +8,17 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include "minimat_ui.h"
 #include "vector_storage.h"
 #define MAX_TOKENS 5
 #define MAX_CSV_TOKENS 4
+
+volatile sig_atomic_t cancel = 0;
+
+void handle_sigint(int sig){
+    cancel = 1;
+}
 
 static char vector[100];
 static char* tokens[MAX_TOKENS];
@@ -163,6 +170,18 @@ static int require_tokens(int c){
 }
 
 static int load_csv(char* filename){
+    if (strlen(filename) <= 4){
+        printf("file name must end in .csv\n");
+        return -1;
+    }
+    int end_idx = strcspn(filename,"\n");
+    filename[end_idx] = '\0';
+    char* extension = filename + end_idx - 4;
+    if (strcmp(extension, ".csv")){
+        printf("file name must end in .csv\n");
+        return -1;
+    }
+
     FILE *file_ptr = fopen(filename, "r");
     if (file_ptr == NULL){
         printf("Could not find file.\n");
@@ -197,14 +216,27 @@ static int load_csv(char* filename){
 void launch_minimat(){
     init_storage();
     char input[50];
-    do {
-        // tokenize input
+
+    struct sigaction act;
+    act.sa_handler = handle_sigint;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    if (sigaction(SIGINT, &act, NULL) < 0){
+        printf("WARNING: signal error. Exiting with Ctrl+C (instead of the quit command) may cause a memory leak\n");
+    }
+
+    printf("minimat> ");
+    fgets(input, 50, stdin);
+    input[strcspn(input,"\n")] = '\0';
+    while(strcmp(input, "quit") && !cancel){
+        consume_input(input);
         printf("minimat> ");
         fgets(input, 50, stdin);
         input[strcspn(input,"\n")] = '\0';
-        consume_input(input);
-        
-    } while(strcmp(input, "quit"));
+    }
+
+    printf("Clearing data...\n");
+    clear();
 }
 
 void consume_input(char* input){
@@ -228,10 +260,6 @@ void consume_input(char* input){
         return;
 
     // commands
-    if (!strcmp(tokens[0], "quit")){
-        clear();
-        return;
-    } 
     if (!strcmp(tokens[0], "clear")) {
         clear();
         printf("Array clear!\n");
@@ -307,12 +335,3 @@ void consume_input(char* input){
         printf("Illegal token: 2nd position must be an operator (=, +, -, *) (found \'%s\')\n", tokens[1]);
     }
 }
-
-
-
-
-
-
-
-
-
