@@ -58,6 +58,26 @@ static int reallocate(){
     return 0;
 }
 
+/**
+ * Converts val into a string without trailing decimal 0s
+ * 
+ * Example: converts 1.23040000 to "1.2304"
+ * 
+ * Example: converts 12300.0000 to "12300"
+ */
+static void float_precise(char out[50], float val){
+    sprintf(out, "%f", val);
+
+    int decimal_idx = strcspn(out, ".");
+    for(int i = strlen(out) - 2; i > decimal_idx; i--){
+        if (out[i] != '0'){
+            sprintf(out, "%.*f", i - decimal_idx, val);
+            return;
+        }
+    }
+    sprintf(out, "%.0f", val);
+}
+
 int init_storage(){
     if (vectors != NULL){
         return 1;
@@ -224,4 +244,17 @@ int assign_tmp(char* name){
     }
 
     return code;
+}
+
+int save_all(FILE* file){
+    for(size_t i = 0; i < vectors_size; i++){
+        Vect vect = vectors[i];
+        char x[50], y[50], z[50];
+        float_precise(x, vect.x);
+        float_precise(y, vect.y);
+        float_precise(z, vect.z);
+        fprintf(file, "%s,%s,%s,%s\n",
+            vect.name, x, y, z);
+    }
+    return 0;
 }

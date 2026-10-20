@@ -166,4 +166,10 @@ int scale_tmp(char* name, double scalar);
  */
 int assign_tmp(char* name);
 
+/**
+ * Writes all vectors to an opened file
+ * @return 0
+ */
+int save_all(FILE* file);
+
 #endif

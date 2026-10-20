@@ -169,24 +169,29 @@ static int require_tokens(int c){
     return 0;
 }
 
-static int load_csv(char* filename){
-    if (strlen(filename) <= 4){
-        printf("file name must end in .csv\n");
-        return -1;
-    }
-    int end_idx = strcspn(filename,"\n");
-    filename[end_idx] = '\0';
-    char* extension = filename + end_idx - 4;
-    if (strcmp(extension, ".csv")){
-        printf("file name must end in .csv\n");
-        return -1;
-    }
-
-    FILE *file_ptr = fopen(filename, "r");
-    if (file_ptr == NULL){
+/**
+ * Opens a file pointer
+ * @return isSuccessful ? 1 : 0
+ */
+static int handle_open(FILE** file_ptr, char* filename, char* mode){
+    *file_ptr = fopen(filename, mode);
+    if (*file_ptr == NULL){
         printf("Could not find file.\n");
         return -1;
     }
+    return 0;
+}
+
+/**
+ * Parses all lines of a file as inputs
+ */
+static int load_csv(char* filename){
+    FILE* file_ptr;
+
+    if (handle_open(&file_ptr, filename, "r"))
+        return -1;
+
+
     char input[50];
     int i = 0;
     while(fgets(input, 50, file_ptr) != NULL){
@@ -194,21 +199,43 @@ static int load_csv(char* filename){
 
         input[strcspn(input,"\n")] = '\0';
         char* token = strtok(input, ",");
-        char* csv_tokens[MAX_CSV_TOKENS];
+        char* csv_tokens[MAX_CSV_TOKENS] = {0};
         csv_tokens[0] = token;
+        int has_spaces = 0;
         for(int i = 1; i < MAX_CSV_TOKENS && token != NULL; i++){
             token = strtok(NULL, ",");
             csv_tokens[i] = token;
+            if (token != NULL && strcspn(token, " ") < strlen(token)){
+                has_spaces = 1;
+            }
         }
 
-        if (csv_tokens[MAX_CSV_TOKENS - 1] != NULL){
+        if (has_spaces){
+            printf("Values cannot contain spaces\n");
+        } else if (csv_tokens[MAX_CSV_TOKENS - 1] != NULL){
             char assignment_str[60];
             sprintf(assignment_str, "%s = %s %s %s%c", 
                 csv_tokens[0], csv_tokens[1], csv_tokens[2], csv_tokens[3], '\0');
             consume_input(assignment_str);
+        } else {
+            printf("Less than 4 values\n");
         }
     }
 
+    fclose(file_ptr);
+    return 0;
+}
+
+/**
+ * Saves all vectors in storage to a file
+ */
+static int save_csv(char* filename){
+    FILE* file_ptr;
+
+    if (handle_open(&file_ptr, filename, "w"))
+        return -1;
+
+    save_all(file_ptr);
     fclose(file_ptr);
     return 0;
 }
@@ -235,7 +262,7 @@ void launch_minimat(){
         input[strcspn(input,"\n")] = '\0';
     }
 
-    printf("Clearing data...\n");
+    printf("\nClearing data...\n");
     clear();
 }
 
@@ -276,6 +303,16 @@ void consume_input(char* input){
             return;
         }
         load_csv(tokens[1]);
+        return;
+    }
+    if (!strcmp(tokens[0], "save")){
+        if (require_tokens(2)){
+            printf("usage: save <filename>\n");
+            return;
+        }
+        if (!save_csv(tokens[1])){
+            printf("Done!\n");
+        }
         return;
     }
 

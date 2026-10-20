@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-c -Wall
+CFLAGS=-c -Wall -g
 LDFLAGS=
 SOURCES= vector.c vector_storage.c minimat_ui.c main.c
 OBJECTS=$(SOURCES:.c=.o)
