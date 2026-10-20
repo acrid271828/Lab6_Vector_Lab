@@ -1,7 +1,7 @@
 /**************
 * vector_storage.c
 * Alex Grant
-* 10/4/2026
+* 10/20/2026
 *
 * Stores an array of vectors and interfaces methods to modify and store array
 *
@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include "vector.h"
 #include "vector_storage.h"
+#define VECTOR_ARRAY_INITIAL_LENGTH 10
 
 static int vectors_size = 0;
 static int vectors_length = 0;

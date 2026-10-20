@@ -1,7 +1,7 @@
 /**************
 * minimat_ui.c
 * Alex Grant
-* 9/29/2026
+* 10/20/2026
 * Controls the UI and input parsing for vector math
 * to compile: $ make
 **************/

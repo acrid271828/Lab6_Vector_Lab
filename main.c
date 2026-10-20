@@ -1,7 +1,7 @@
 /**************
 * main.c
 * Alex Grant
-* 9/29/2026
+* 10/20/2026
 * Boots the minimat user interface for vector math
 * to compile: $ make
 **************/
@@ -16,7 +16,9 @@ int main(int argc, char* argv[]){
 			printf("%-5s : exit the program\n", "quit");
 			printf("%-5s : lists all stored vectors\n", "list");
 			printf("%-5s : deletes all stored vectors\n", "clear");
-			printf("Operations:\n");
+			printf("%-15s : loads all vectors from a file in csv format\n", "load <filename>");
+			printf("%-15s : loads all vectors from a file in csv format\n", "save <filename>");
+			printf("\nOperations:\n");
 			printf("%-20s | varA = VALx, VALy, VALz\n", "Initial Assignment");
 			printf("%-20s | varC = varA + varB\n", "Addition & Assign");
 			printf("%-20s | varC = varA - varB\n", "Subtraction & Assign");

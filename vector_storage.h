@@ -1,20 +1,16 @@
 /**************
 * vector_storage.h
 * Alex Grant
-* 10/4/2026
+* 10/20/2026
 *
 * Stores an array of vectors and interfaces methods to modify and store array
 *
 * This file never exposes the Vect struct externaly: callers exclusively use names and doubles
 *
-* Uses a vector name == NULL to denote that a vector is unset/the array location is empty
-* , so NULL can never be set as a valid vector's name
-*
 * to compile: $ make
 **************/
 #ifndef VECTOR_STORAGE_H
 #define VECTOR_STORAGE_H
-#define VECTOR_ARRAY_INITIAL_LENGTH 10
 #define ERR_VECTOR_MISSING -1
 #define ERR_NAME_NULL -2
 #define ERR_STORAGE_FULL -3
